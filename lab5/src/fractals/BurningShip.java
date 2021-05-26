@@ -1,10 +1,12 @@
+package fractals;
+
 import java.awt.geom.Rectangle2D;
 
-public class Tricorn extends FractalGenerator{
+public class BurningShip extends FractalGenerator {
     @Override
     public void getInitialRange(Rectangle2D.Double range) {
         range.x = -2;
-        range.y = -2;
+        range.y = -2.5;
         range.width = 4;
         range.height = 4;
     }
@@ -15,21 +17,25 @@ public class Tricorn extends FractalGenerator{
         double zreal = 0;
         double zimaginary = 0;
 
-        while (iteration < MAX_ITERATIONS &&
+        while (iteration < FractalGenerator.MAX_ITERATIONS &&
                 zreal * zreal + zimaginary * zimaginary < 4)
         {
             double zrealUpdated = zreal * zreal - zimaginary * zimaginary + x;
-            double zimaginaryUpdated = -2 * zreal * zimaginary + y;
+            double zimaginaryUpdated = 2 * Math.abs(zreal)
+                    * Math.abs(zimaginary) + y;
+
             zreal = zrealUpdated;
             zimaginary = zimaginaryUpdated;
+
             iteration += 1;
         }
 
-        return (iteration != MAX_ITERATIONS) ? iteration : -1;
+        return (iteration != FractalGenerator.MAX_ITERATIONS) ? iteration : -1;
+
     }
 
     @Override
     public String toString() {
-        return "Tricorn";
+        return "fractals.BurningShip";
     }
 }
