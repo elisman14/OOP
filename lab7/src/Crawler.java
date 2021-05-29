@@ -7,16 +7,20 @@ import java.util.regex.Pattern;
 
 public class Crawler {
 
-    public static final String HREF_PATTERN = "^\\s*<a href=\"(http:.*)\">.*</a>$";
-    public static final int port = 8080;
+    public static final String HREF_PATTERN = "^.*<a href=\"(http[s]?://)?([^/\\s]+/)(.*)\">.*</a>.*$";
+    private final int port;
+    private final int timeout;
+    private String webHost;
 
     private final int mainDepth;
 
     private final Map<Link, Integer> checkedLinks;
     private final LinkedList<Link> uncheckedLinks;
 
-    public Crawler(Link mainLink, int mainDepth) {
+    public Crawler(Link mainLink, int mainDepth, int port, int timeout) {
         this.mainDepth = mainDepth;
+        this.port = port;
+        this.timeout = timeout;
         checkedLinks = new HashMap<>();
         uncheckedLinks = new LinkedList<>();
 
@@ -60,11 +64,15 @@ public class Crawler {
 
                 Matcher m = Pattern.compile(HREF_PATTERN).matcher(htmlLine);
 
+//                System.out.println(htmlLine);
+
                 if (m.find()) {
                     found = true;
 
                     do {
-                        uncheckedLinks.add(new Link(m.group(1), depth));
+                        uncheckedLinks.add(new Link(webHost + m.group(3), depth));
+                        System.out.println(m.group().split(" ").length);
+                        System.out.println("http://" + webHost + "/" + m.group(m.group()));
                     } while (m.find());
                 }
             }
@@ -86,25 +94,28 @@ public class Crawler {
             System.err.println("UnknownHostException: " + e.getMessage());
             return Optional.empty();
         }
-        catch (IOException ex) {
-            System.err.println("IOException: " + ex.getMessage());
+        catch (IOException e) {
+            System.err.println("IOException: " + e.getMessage());
             return Optional.empty();
         }
 
         try {
-            socket.setSoTimeout(3000);
+            socket.setSoTimeout(timeout);
         }
-        catch (SocketException exc) {
-            System.err.println("SocketException in setSoTimeout: " + exc.getMessage());
+        catch (SocketException e) {
+            System.err.println("SocketException in setSoTimeout: " + e.getMessage());
             return Optional.empty();
         }
+
+        System.out.println(socket);
 
         return Optional.of(socket);
     }
 
     private Optional<BufferedReader> getBufferedReader(Socket socket, Link link) {
         String docPath = link.getDocPath();
-        String webHost = link.getWebHost();
+        webHost = link.getWebHost();
+
         InputStream inputStream;
         OutputStream outputStream;
 
@@ -113,10 +124,10 @@ public class Crawler {
 
             PrintWriter p = new PrintWriter(outputStream);
 
-            p.println("GET " + docPath + " HTTP/1.1\r\n");
+            p.print("GET " + docPath + " HTTP/1.1\r\n");
             System.out.println("GET " + docPath + " HTTP/1.1\r\n");
-            p.println("Host: " + webHost);
-            p.println("Connection: close\r\n\r\n");
+            p.print("Host: " + webHost + "\r\n\r\n");
+//            p.print("Connection: close\r\n");
             p.flush();
 
             inputStream = socket.getInputStream();

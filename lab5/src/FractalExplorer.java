@@ -164,22 +164,15 @@ public class FractalExplorer {
     private class MouseHandler extends MouseAdapter {
         @Override
         public void mouseClicked(MouseEvent e) {
-//            int x = e.getX();
-//            int y = e.getY();
-//
-//            double xCoord = FractalGenerator.getCoord(range.x, range.x + range.width, frameSize, x);
-//            double yCoord = FractalGenerator.getCoord(range.y, range.y + range.height, frameSize, y);
-//
-//            fractal.recenterAndZoomRange(range, xCoord, yCoord, 0.5);
-//            drawFractal();
 
             if (remainingRows != 0) { return; }
-            
+
             int x = e.getX();
+            int y = e.getY();
+
             double xCoord = FractalGenerator.getCoord(range.x,
                     range.x + range.width, frameSize, x);
 
-            int y = e.getY();
             double yCoord = FractalGenerator.getCoord(range.y,
                     range.y + range.height, frameSize, y);
 
@@ -223,15 +216,11 @@ public class FractalExplorer {
         }
 
         protected void done() {
-            // Iterate over the array of row-data, drawing in the pixels
-            // that were computed in doInBackground().  Redraw the row
-            // that was changed.
             for (int i = 0; i < colorValues.length; i++) {
                 display.drawPixel(i, rowNumber, colorValues[i]);
             }
             display.repaint(0, 0, rowNumber, frameSize, 1);
 
-            // Decrement rows remaining.  If 0, call enableUI(true)
             remainingRows--;
             if (remainingRows == 0) {
                 enableUI(true);
