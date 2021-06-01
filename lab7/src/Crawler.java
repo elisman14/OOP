@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 
 public class Crawler {
 
-    public static final String HREF_PATTERN = "^.*<a href=\"(http[s]?://)?([^/\\s]+/)(.*)\">.*</a>.*$";
+    public static final String HREF_PATTERN = "^.*<a.*href=\"((?:http://|/)[a-zA-Z-_./]+)\".*>.*</a>.*$";
     private final int port;
     private final int timeout;
     private String webHost;
@@ -27,61 +27,82 @@ public class Crawler {
         uncheckedLinks.add(mainLink);
     }
 
-    public void runCrawler() {
-        Socket socket;
-        BufferedReader bufferedReader;
-        int depth = 1;
+    public void runCrawler() throws IllegalArgumentException{
+        Link link;
 
-        while (!uncheckedLinks.isEmpty() && depth <= mainDepth + 1){
+        while (!uncheckedLinks.isEmpty()){
             try {
-                socket = getConnectionSocket(uncheckedLinks.getFirst())
-                        .orElseThrow(IllegalArgumentException::new);
+                link = uncheckedLinks.getFirst();
 
-                bufferedReader = getBufferedReader(socket, uncheckedLinks.getFirst())
-                        .orElseThrow(IllegalArgumentException::new);
+                if (link.getDepth() == mainDepth || checkedLinks.containsKey(link)) {
+                    System.out.println("Max depth or already searched: " + link);
+                    checkedLinks.merge(link, 1, Integer::sum);
+                    continue;
+                }
 
-                if (getAllLinksFromPage(bufferedReader, depth)) { ++depth; }
-                checkedLinks.merge(uncheckedLinks.remove(0), 1, Integer::sum);
+                System.out.println("Searching in url: " + link);
 
-                socket.close();
-                bufferedReader.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+                getAllLinksFromPage(link);
+
+            } catch (Exception e) {
+                System.out.println("Exception from runCrawler: " + e.getMessage() + "\nProblem from: " + uncheckedLinks.remove());
+                uncheckedLinks.removeFirst();
             }
 
         }
     }
 
-    private boolean getAllLinksFromPage(BufferedReader bf, int depth) {
-        String htmlLine;
-        boolean found = false;
+    private void getAllLinksFromPage(Link link) {
+        Socket socket;
+        BufferedReader bufferedReader;
+        String htmlLine, currentLink;
+        Matcher matcher;
+        Link newLink;
 
-        while (true) {
-            try {
-                htmlLine = bf.readLine();
+        try {
+            socket = getConnectionSocket(link)
+                    .orElseThrow(IllegalArgumentException::new);
 
-                if (htmlLine == null) { break; }
+            bufferedReader = getBufferedReader(socket, link)
+                    .orElseThrow(IllegalArgumentException::new);
 
-                Matcher m = Pattern.compile(HREF_PATTERN).matcher(htmlLine);
+            while (true) {
+                htmlLine = bufferedReader.readLine();
 
-//                System.out.println(htmlLine);
+                if (htmlLine == null) {
+                    break;
+                }
 
-                if (m.find()) {
-                    found = true;
+                matcher = Pattern.compile(HREF_PATTERN).matcher(htmlLine);
 
-                    do {
-                        uncheckedLinks.add(new Link(webHost + m.group(3), depth));
-                        System.out.println(m.group().split(" ").length);
-                        System.out.println("http://" + webHost + "/" + m.group(m.group()));
-                    } while (m.find());
+                while (matcher.find()) {
+                    currentLink = matcher.group(1);
+
+                    if (currentLink.startsWith("/")) {
+                        currentLink = "http://" + webHost + currentLink;
+                    }
+
+                    newLink = new Link(currentLink, link.getDepth());
+
+
+                    if (checkedLinks.containsKey(newLink) || uncheckedLinks.getFirst().equals(newLink)) {
+                        checkedLinks.merge(newLink, 1, Integer::sum);
+                        System.out.println("Copy found: " + newLink);
+                        continue;
+                    }
+
+                    checkedLinks.merge(uncheckedLinks.removeFirst(), 1, Integer::sum);
+                    uncheckedLinks.addLast(newLink);
+                    System.out.println("New link added to uncheckedQueue: " + newLink);
+
                 }
             }
-            catch (IOException except) {
-                System.err.println("IOException from bf readLine: " + except.getMessage());
-            }
-        }
 
-        return found;
+            socket.close();
+            bufferedReader.close();
+        } catch (IOException e) {
+            System.out.println("Error from runCrawler: " + e.getMessage());
+        }
     }
 
     private Optional<Socket> getConnectionSocket(Link link) {
@@ -91,11 +112,11 @@ public class Crawler {
             socket = new Socket(link.getWebHost(), port);
         }
         catch (UnknownHostException e) {
-            System.err.println("UnknownHostException: " + e.getMessage());
+            System.err.println("UnknownHostException: " + e.getMessage() + "\nurl: " + link.getUrl());
             return Optional.empty();
         }
         catch (IOException e) {
-            System.err.println("IOException: " + e.getMessage());
+            System.err.println("IOException: " + e.getMessage() + link.getUrl());
             return Optional.empty();
         }
 
@@ -106,8 +127,6 @@ public class Crawler {
             System.err.println("SocketException in setSoTimeout: " + e.getMessage());
             return Optional.empty();
         }
-
-        System.out.println(socket);
 
         return Optional.of(socket);
     }
@@ -125,10 +144,14 @@ public class Crawler {
             PrintWriter p = new PrintWriter(outputStream);
 
             p.print("GET " + docPath + " HTTP/1.1\r\n");
-            System.out.println("GET " + docPath + " HTTP/1.1\r\n");
             p.print("Host: " + webHost + "\r\n\r\n");
-//            p.print("Connection: close\r\n");
+            p.print("Accept: */*");
+            p.print("User-Agent: Java");
+            p.print("Connection: close\r\n");
+            p.print("");
             p.flush();
+
+//            System.out.println("GET " + webHost + docPath);
 
             inputStream = socket.getInputStream();
 
@@ -141,7 +164,15 @@ public class Crawler {
         }
     }
 
-    public Map<Link, Integer> getCheckedLinks() {
-        return checkedLinks;
+    public void printLinks() {
+        checkedLinks.forEach(((link, count) -> System.out.println(
+                                                        "url: " + link.getUrl() +
+                                                        "\ndepth: " + link.getDepth() +
+                                                        "\ncount: " + count + "\n"
+                                                        )
+        ));
+
+        System.out.println("uncheckedLinks size: " + uncheckedLinks.size());
+        System.out.println("checkedLinks size: " + checkedLinks.size());
     }
 }
