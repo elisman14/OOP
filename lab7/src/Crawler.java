@@ -27,15 +27,9 @@ public class Crawler {
         uncheckedLinks.add(mainLink);
     }
 
-    public void runCrawler() throws IllegalArgumentException{
-        Link fromLink;
-
-        while (!uncheckedLinks.isEmpty()) {
-            fromLink = uncheckedLinks.removeFirst();
-            checkedLinks.merge(fromLink, 1, Integer::sum);
-            makeNewConnection(fromLink);
-
-        }
+    public LinkedList<Link> getUncheckedLinks(Link link) throws IllegalArgumentException{
+        makeNewConnection(link);
+        return uncheckedLinks;
     }
 
     private void makeNewConnection(Link fromLink) {
@@ -72,8 +66,8 @@ public class Crawler {
 
                 if (htmlLine == null) { break; }
 
-                getHrefUrlListFromPageSource(htmlLine).ifPresent(hrefUrlList ->
-                    sortUrlList(hrefUrlList, fromLink)
+                getHrefUrlListFromPageSource(htmlLine).ifPresent(hrefUrl ->
+                    addLinkToUncheckedList(hrefUrl, fromLink)
                 );
             }
 
@@ -87,32 +81,49 @@ public class Crawler {
         }
     }
 
-    private Optional<LinkedList<String>> getHrefUrlListFromPageSource(String htmlLine) {
+    private Optional<String> getHrefUrlListFromPageSource(String htmlLine) {
         Matcher matcher;
-        LinkedList<String> hrefUrlList = new LinkedList<>();
+        String hrefUrlList;
 
         matcher = Pattern.compile(HREF_PATTERN).matcher(htmlLine);
 
-        while (matcher.find()) {
-            hrefUrlList.add(matcher.group(1));
+        if (matcher.find()) {
+            hrefUrlList = matcher.group(1);
+            return Optional.of(hrefUrlList);
         }
 
-        return Optional.of(hrefUrlList);
+        return Optional.empty();
     }
 
-    private void sortUrlList(LinkedList<String> hrefUrlList, Link fromLink) {
-        hrefUrlList.stream()
-                .map(s -> {
-                    s = s.startsWith("/") ? "http://" + fromLink.getWebHost() + s : s;
-                    return new Link(s, fromLink.getDepth() + 1);
-                })
-                .forEach(link -> {
-                    if (checkedLinks.containsKey(link) || link.getDepth() >= mainDepth) {
-                        checkedLinks.merge(link, 1, Integer::sum);
-                    } else {
-                        uncheckedLinks.add(link);
-                    }
-                });
+    private void addLinkToUncheckedList(String hrefUrl, Link fromLink) {
+        System.out.println(hrefUrl);
+//        hrefUrl.stream()
+//                .map(s -> {
+//                    s = s.startsWith("/") ? "http://" + fromLink.getWebHost() + s : s;
+//                    return new Link(s, fromLink.getDepth() + 1);
+//                })
+//                .forEach(uncheckedLinks::add);
+
+        hrefUrl = hrefUrl.startsWith("/") ? "http://" + fromLink.getWebHost() + hrefUrl : hrefUrl;
+        Link link = new Link(hrefUrl, fromLink.getDepth() + 1);
+        if (checkedLinks.containsKey(link) || link.getDepth() >= mainDepth) {
+            checkedLinks.merge(link, 1, Integer::sum);
+            return;
+        }
+        uncheckedLinks.add(link);
+    }
+
+    private void addToCheckedLinks(Link link) {
+//        uncheckedLinks
+//                .forEach(link -> {
+//                    if (checkedLinks.containsKey(link) || link.getDepth() >= mainDepth) {
+//                        checkedLinks.merge(link, 1, Integer::sum);
+//                    } else {
+//                        uncheckedLinks.add(link);
+//                    }
+//                });
+
+
     }
 
     private Optional<Socket> getConnectionSocket(Link link) {
@@ -189,5 +200,12 @@ public class Crawler {
         System.out.println("uncheckedLinks size: " + uncheckedLinks.size());
         System.out.println("checkedLinks size: " + checkedLinks.size());
         System.out.println("Max found depth: " + maxDepth);
+    }
+
+    public void run() {
+       while (!uncheckedLinks.isEmpty()) {
+           getUncheckedLinks(uncheckedLinks.getFirst());
+           checkedLinks.put(uncheckedLinks.removeFirst(), 1);
+       }
     }
 }

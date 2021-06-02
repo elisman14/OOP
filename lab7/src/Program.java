@@ -1,3 +1,5 @@
+import java.util.LinkedList;
+
 public class Program {
     public static void main(String[] args) throws InterruptedException {
 
@@ -6,10 +8,12 @@ public class Program {
 
             System.out.println("Started crawler");
             Link link = new Link(args[0], 0);
+            LinkedList<Link> linksToStart;
 
             Crawler crawler = new Crawler(link, intsFromInput[0], intsFromInput[1], intsFromInput[2]);
-            crawler.runCrawler();
 
+            // linksToStart = crawler.getUncheckedLinks(link);
+            crawler.run();
             crawler.printLinks();
 
         } catch (IllegalArgumentException e) {
