@@ -13,6 +13,7 @@ public class Crawler {
 
     private final Map<Link, Integer> checkedLinks;
     private final LinkedList<Link> uncheckedLinks;
+    private final Set<Link> blackList;
 
 
     public Crawler(Link mainLink, int mainDepth, int port, int timeout) {
@@ -21,6 +22,7 @@ public class Crawler {
         this.timeout = timeout;
         checkedLinks = new HashMap<>();
         uncheckedLinks = new LinkedList<>();
+        blackList = new HashSet<>();
 
         uncheckedLinks.add(mainLink);
     }
@@ -34,12 +36,13 @@ public class Crawler {
             makeNewConnection(fromLink);
 
         }
-
     }
 
     private void makeNewConnection(Link fromLink) {
         Socket socket;
         BufferedReader bufferedReader;
+
+        if (blackList.contains(fromLink)) { return; }
 
         try {
             socket = getConnectionSocket(fromLink)
@@ -54,6 +57,9 @@ public class Crawler {
 
         } catch (IOException e) {
             System.out.println("Error with makeNewConnection: " + e.getMessage());
+
+        } catch (IllegalArgumentException e) {
+            blackList.add(fromLink);
         }
     }
 
@@ -96,18 +102,17 @@ public class Crawler {
 
     private void sortUrlList(LinkedList<String> hrefUrlList, Link fromLink) {
         hrefUrlList.stream()
-                .filter(s -> s.startsWith("/"))
-                .map(s -> s = "http://" + fromLink.getWebHost() + s)
-                .forEach(s -> {
-                    Link linkToLoad = new Link(s, fromLink.getDepth() + 1);
-
-                    if (checkedLinks.containsKey(linkToLoad) || linkToLoad.getDepth() >= mainDepth) {
-                        checkedLinks.merge(linkToLoad, 1, Integer::sum);
+                .map(s -> {
+                    s = s.startsWith("/") ? "http://" + fromLink.getWebHost() + s : s;
+                    return new Link(s, fromLink.getDepth() + 1);
+                })
+                .forEach(link -> {
+                    if (checkedLinks.containsKey(link) || link.getDepth() >= mainDepth) {
+                        checkedLinks.merge(link, 1, Integer::sum);
                     } else {
-                        uncheckedLinks.add(linkToLoad);
+                        uncheckedLinks.add(link);
                     }
                 });
-
     }
 
     private Optional<Socket> getConnectionSocket(Link link) {
@@ -115,11 +120,14 @@ public class Crawler {
 
         try {
             socket = new Socket(link.getWebHost(), port);
+
         }
+
         catch (UnknownHostException e) {
-            System.err.println("UnknownHostException: " + e.getMessage() + "\nurl: " + link.getUrl());
+            System.err.println("UnknownHostException: " + link.getUrl());
             return Optional.empty();
         }
+
         catch (IOException e) {
             System.err.println("IOException: " + e.getMessage() + link.getUrl());
             return Optional.empty();
@@ -127,13 +135,13 @@ public class Crawler {
 
         try {
             socket.setSoTimeout(timeout);
-        }
-        catch (SocketException e) {
-            System.err.println("SocketException in setSoTimeout: " + e.getMessage());
-            return Optional.empty();
+            return Optional.of(socket);
+
+        } catch (SocketException e) {
+            System.out.println("SocketException: " + e.getMessage());
         }
 
-        return Optional.of(socket);
+        return Optional.empty();
     }
 
     private Optional<BufferedReader> getBufferedReader(Link link, Socket socket) {
