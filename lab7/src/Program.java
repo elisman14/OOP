@@ -1,6 +1,3 @@
-import java.util.HashMap;
-import java.util.Map;
-
 public class Program {
     public static void main(String[] args) throws InterruptedException {
 
@@ -14,15 +11,6 @@ public class Program {
             crawler.runCrawler();
 
             crawler.printLinks();
-
-            Map<Link, Integer> map = new HashMap<>();
-            Link a = new Link("http://www.vnukovo.ru/en/", 1);
-            Link b = new Link("http://www.vnukovo.ru/en/", 4);
-
-            map.merge(a, 1, Integer::sum);
-            map.merge(b, 1, Integer::sum);
-
-            System.out.println(map);
 
         } catch (IllegalArgumentException e) {
             System.out.println("Bad Socket: " + e.getMessage());
