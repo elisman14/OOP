@@ -1,6 +1,6 @@
 /**
-* двумерный класс точки.
-**/
+ * двумерный класс точки.
+ */
 public class Point2d {
     /* координата X */
     protected double xCoord;

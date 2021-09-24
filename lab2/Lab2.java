@@ -4,6 +4,12 @@ import java.lang.Math;
 public class Lab2 {
     public static void main(String args[]) {
         Scanner scan = new Scanner(System.in);
+
+
+        Point3d test = new Point3d(scan);
+
+
+
         System.out.println("Введите координаты первой точки:");
         double[] coordsFirst = new double[3];
         for (int i = 0; i < 3; ++i)

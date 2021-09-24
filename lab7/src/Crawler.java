@@ -5,7 +5,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-public class Crawler {
+public class Crawler implements Runnable{
     public static final String HREF_PATTERN = "^.*<a.*href=\"((?:http://|/)[a-zA-Z-_./]+)\".*>.*</a>.*$";
     private final int port;
     private final int timeout;
@@ -96,14 +96,6 @@ public class Crawler {
     }
 
     private void addLinkToUncheckedList(String hrefUrl, Link fromLink) {
-        System.out.println(hrefUrl);
-//        hrefUrl.stream()
-//                .map(s -> {
-//                    s = s.startsWith("/") ? "http://" + fromLink.getWebHost() + s : s;
-//                    return new Link(s, fromLink.getDepth() + 1);
-//                })
-//                .forEach(uncheckedLinks::add);
-
         hrefUrl = hrefUrl.startsWith("/") ? "http://" + fromLink.getWebHost() + hrefUrl : hrefUrl;
         Link link = new Link(hrefUrl, fromLink.getDepth() + 1);
         if (checkedLinks.containsKey(link) || link.getDepth() >= mainDepth) {
@@ -111,19 +103,6 @@ public class Crawler {
             return;
         }
         uncheckedLinks.add(link);
-    }
-
-    private void addToCheckedLinks(Link link) {
-//        uncheckedLinks
-//                .forEach(link -> {
-//                    if (checkedLinks.containsKey(link) || link.getDepth() >= mainDepth) {
-//                        checkedLinks.merge(link, 1, Integer::sum);
-//                    } else {
-//                        uncheckedLinks.add(link);
-//                    }
-//                });
-
-
     }
 
     private Optional<Socket> getConnectionSocket(Link link) {
@@ -203,9 +182,14 @@ public class Crawler {
     }
 
     public void run() {
-       while (!uncheckedLinks.isEmpty()) {
-           getUncheckedLinks(uncheckedLinks.getFirst());
-           checkedLinks.put(uncheckedLinks.removeFirst(), 1);
-       }
+        System.out.println(Thread.currentThread().getName() + " (Start)");
+
+        while (!uncheckedLinks.isEmpty()) {
+            getUncheckedLinks(uncheckedLinks.getFirst());
+            checkedLinks.put(uncheckedLinks.removeFirst(), 1);
+        }
+
+        System.out.println(Thread.currentThread().getName()+" (End)");
+        printLinks();
     }
 }

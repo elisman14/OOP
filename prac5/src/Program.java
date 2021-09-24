@@ -11,20 +11,20 @@ import static java.lang.String.format;
 
 public class Program {
     public static void main(String[] args) {
-        // #4
         String[] totalPointsInput = new String[] {"trance", "recant"};
-        // #5
         int[] longestRunInput = new int[] {1, 2, 3, 5, 6, 7, 8, 9};
-        // #1
+        int[] scores = new int[] {53, 79};
+
         System.out.println("FFFF " + "ABCD" + "\t" + sameLetterPattern("FFFF", "ABCD"));
         System.out.println(spiderToFly("A4", "C2"));
         System.out.println(digitsCount(12345));
         System.out.println(totalPoints(totalPointsInput, "recant"));
         System.out.println(longestRun(longestRunInput));
+        System.out.println(takeDownAverage(scores));
         System.out.println(rearrange("Tesh3 th5e 1I lov2e way6 she7 j4ust i8s."));
         System.out.println(maxPossible(8732, 91255));
         System.out.println(timeDifference("America/New_York", "31-12-1970 01:40:00 PM", "Asia/Shanghai"));
-        System.out.println(isNew(321));
+        System.out.println(isNew(509));
     }
 
     /*
@@ -33,10 +33,9 @@ public class Program {
      * буквенный шаблон, и false в противном случае.
      */
     public static int getPattern(String input) {
-        input = input.toLowerCase(Locale.ROOT);
-        char[] inputArray = input.toCharArray();
-        int patternCode = 0;
+        char[] inputArray = input.toLowerCase(Locale.ROOT).toCharArray();
         HashMap<Character, Integer> charMap = new HashMap<>();
+        int patternCode = 0;
 
         for(int i = 0; i < input.length(); i++) {
             if(!charMap.containsKey(inputArray[i])) {
@@ -44,7 +43,9 @@ public class Program {
             }
         }
 
-        for(int i = 0; i < input.length(); ++i) { patternCode += (charMap.get(inputArray[i]) + 1) * pow(10, i); }
+        for(int i = 0; i < input.length(); ++i) {
+            patternCode += (charMap.get(inputArray[i]) + 1) * pow(7, i);
+        }
 
         return patternCode;
     }
@@ -204,7 +205,7 @@ public class Program {
     public static int takeDownAverage(int[] scores) {
         int sumOfScores = Arrays.stream(scores).sum();
         int mean = (sumOfScores / scores.length) - 5;
-        return (mean * scores.length + 1) - sumOfScores;
+        return (mean * (scores.length + 1)) - sumOfScores;
     }
 
     /*
@@ -227,9 +228,7 @@ public class Program {
             }
         }
 
-        wordNumbers.forEach((integer, s) -> {
-            out.append(s).append(" ");
-        });
+        wordNumbers.forEach((integer, s) -> out.append(s).append(" "));
 
        return out.toString();
     }
@@ -298,13 +297,14 @@ public class Program {
         char[] numbers = String.valueOf(n).toCharArray();
         short mainNumber = Short.parseShort(Character.toString(numbers[0]));
         short inLoop;
-        boolean flag = true;
 
         for (int i = 1; i < numbers.length; ++i) {
             inLoop = Short.parseShort(Character.toString(numbers[i]));
-            if (inLoop < mainNumber && inLoop != 0) { flag = false; }
+            if (inLoop < mainNumber && inLoop != 0) {
+                return false;
+            }
         }
 
-        return flag;
+        return true;
     }
 }

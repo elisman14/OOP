@@ -4,18 +4,19 @@ import java.util.regex.Pattern;
 
 public class Program {
     public static void main(String[] args) {
-        int[] a = new int[]{1, 2, 3, 4, 5, 6, 9, 97};
-        int[] b = new int[]{9, 4, 26, 26, 0, 0, 5, 20, 6, 25, 5};
-        System.out.println(sevenBoomStream(a));
-        System.out.println(cons(a));
-        System.out.println(unmix("hTsii  s aimex dpus rtni.g"));
-        System.out.println(noYellin("I just!!! can!!! not!!! believe!!! it!"));
-        System.out.println(xPronounce("Inside the box was a xylophone"));
-        System.out.println(largestGap(b));
-        System.out.println(noName(7977));
-        System.out.println(commonLastVowel("OOI UUI EEI AAI"));
-        System.out.println(memeSum(1222, 30277));
-        System.out.println(unrepeated("hello"));
+//        int[] a = new int[]{1, 2, 3, 4, 5, 6, 9, 97};
+//        int[] b = new int[]{9, 4, 26, 26, 0, 0, 5, 20, 6, 25, 5};
+//        System.out.println(sevenBoomStream(a));
+//        System.out.println(cons(a));
+//        System.out.println(unmix("hTsii  s aimex dpus rtni.g"));
+//        System.out.println(noYellin("I just!!! can!!! not!!! believe!!! it!"));
+//        System.out.println(xPronounce("Inside the box was a xylophone"));
+//        System.out.println(largestGap(b));
+//        System.out.println(noName(7977));
+//        System.out.println(commonLastVowel("OOI UUI EEI AAI"));
+//        System.out.println(memeSum(1222, 30277));
+//        System.out.println(unrepeated("hello"));
+        testInMemoryCash();
     }
 
     /**
@@ -191,4 +192,5 @@ public class Program {
                 .forEach(builder::append);
         return builder.toString();
     }
+
 }
